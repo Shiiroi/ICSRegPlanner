@@ -1,0 +1,7 @@
+# Eclipse & Java ignores
+.classpath
+.project
+.settings/
+bin/
+target/
+*.log
