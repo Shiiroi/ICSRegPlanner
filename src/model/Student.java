@@ -1,6 +1,8 @@
 package model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Student implements Serializable {
 
@@ -10,7 +12,8 @@ public class Student implements Serializable {
     private String email;
     private String password;
     private String program;
-
+    private List<Course> enrolledCourses = new ArrayList<>(); 
+    
     public Student() {}
 
     public Student(String firstName, String middleName, String lastName, 
@@ -21,6 +24,7 @@ public class Student implements Serializable {
         this.email = email;
         this.password = password;
         this.program = program;
+        this.enrolledCourses = new ArrayList<>();
     }
 
     // getter and setters
@@ -47,5 +51,13 @@ public class Student implements Serializable {
             return firstName + " " + middleName + " " + lastName;
         }
         return firstName + " " + lastName;
+    }
+    
+    public void addCourse(Course course) { enrolledCourses.add(course); }
+    
+    public void removeCourse(Course course) { enrolledCourses.remove(course); }
+    
+    public List<Course> getEnrolledCourses() {
+        return enrolledCourses;
     }
 }

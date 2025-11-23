@@ -100,15 +100,19 @@ public class LoginView {
         // Initialize buttons
         Button loginBtn = new Button("Login");
         Button registerBtn = new Button("Register");
+        Button exitButton = new Button("Exit");
 
         // Setup button layout
-        HBox buttonBox = new HBox(10, loginBtn, registerBtn);
+        HBox buttonBox = new HBox(10, loginBtn, registerBtn, exitButton);
         buttonBox.setAlignment(Pos.CENTER);
         grid.add(buttonBox, 0, 4, 2, 1);
 
         // Button event handlers
         loginBtn.setOnAction(e -> handleLogin());
         registerBtn.setOnAction(e -> handleRegister());
+        exitButton.setOnAction(e -> {
+            System.exit(0);
+        });
 
         // Add grid to main container
         mainContainer.getChildren().add(grid);

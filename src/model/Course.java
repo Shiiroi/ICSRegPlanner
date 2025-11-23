@@ -1,6 +1,8 @@
 package model;
 
-public class Course {
+import java.io.Serializable;
+
+public class Course implements Serializable {
     private String courseCode;
     private String courseTitle;
     private int units;
@@ -9,10 +11,11 @@ public class Course {
     private String days;
     private String rooms;
     private String description;
+    
 
     // Constructor for course offerings (with schedule)
     public Course(String courseCode, String courseTitle, int units, String section, 
-                  String times, String days, String rooms) {
+        String times, String days, String rooms) {
         this.courseCode = courseCode;
         this.courseTitle = courseTitle;
         this.units = units;
