@@ -10,14 +10,21 @@ import handler.FileManager;
 import model.Course;
 import model.CoursePlanner;
 import model.Student;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Main dashboard view for students to browse course offerings and program curriculum
-
 public class StudentDashboard {
+    // ICS Color Palette
+    private static final String ICS_BLUE = "#1753A0";
+    private static final String ICS_YELLOW = "#F2ED0C";
+    private static final String LIGHT_BLUE = "#4B8BDE";
+    private static final String CREAM = "#F5F1E8";
+    private static final String WHITE = "#FFFFFF";
+    private static final String DARK_TEXT = "#2C2C2C";
+    private static final String LIGHT_TEXT = "#666666";
+    private static final String FONT_FAMILY = "'Poppins', 'Segoe UI', sans-serif";
+    
     private Scene scene;
     private Stage stage;
     private BorderPane root;
@@ -27,8 +34,6 @@ public class StudentDashboard {
     private CoursePlanner planner;
     private GridPane calendarGrid;
     private VBox calendarInfoPane;
-    
-    
     
     public StudentDashboard(Student student) {
         this.currentStudent = student;
@@ -40,96 +45,213 @@ public class StudentDashboard {
         planner.setEnrolledCourses(currentStudent.getEnrolledCourses());
         setProperties();
     }
-
-    // Sets up the main dashboard layout with header and tabs
+    
     private void setProperties() {
         root.setPadding(new Insets(20));
-        root.setStyle("-fx-background-color: #f5f5f5;");
-
-     // Setup header with welcome message and logout button
+        root.setStyle("-fx-background-color: " + CREAM + ";");
+        
+        // Setup header with welcome message and logout button
         HBox topBox = new HBox(20);
-        topBox.setPadding(new Insets(0, 0, 10, 0));
-
+        topBox.setPadding(new Insets(15, 20, 15, 20));
+        topBox.setStyle(
+            "-fx-background-color: " + WHITE + ";" +
+            "-fx-background-radius: 10;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 2);"
+        );
+        
         VBox welcomeBox = new VBox(5);
         Label welcomeLabel = new Label("Welcome, " + currentStudent.getFullName() + "!");
-        welcomeLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        welcomeLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 24px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+        
         Label programLabel = new Label(currentStudent.getProgram());
-        programLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+        programLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: 500;" +
+            "-fx-text-fill: " + LIGHT_TEXT + ";"
+        );
         welcomeBox.getChildren().addAll(welcomeLabel, programLabel);
-
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        
         Button logoutButton = new Button("Logout");
+        styleButton(logoutButton, true);
         logoutButton.setOnAction(e -> handleLogout());
-
-        topBox.getChildren().addAll(welcomeBox, logoutButton);
+        
+        topBox.getChildren().addAll(welcomeBox, spacer, logoutButton);
         root.setTop(topBox);
-
-        // Setup tab pane with Enlistment and Course List tabs
+        
+        // Setup tab pane
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-
-        Tab enlistmentTab = new Tab("Enlistment");
-        enlistmentTab.setContent(createEnlistmentContent());
-
+        tabPane.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-background-color: " + WHITE + ";" +
+            "-fx-border-radius: 10;" +
+            "-fx-background-radius: 10;"
+        );
+        
         Tab courseListTab = new Tab("Course List");
         courseListTab.setContent(createCourseListContent());
         
+        Tab enlistmentTab = new Tab("Enlistment");
+        enlistmentTab.setContent(createEnlistmentContent());
+        
         Tab calendarTab = new Tab("Calendar");
         calendarTab.setContent(createCalendarContent());
-
+        
         tabPane.getTabs().addAll(courseListTab, enlistmentTab, calendarTab);
-        root.setCenter(tabPane);
+        
+        VBox centerContainer = new VBox(15);
+        centerContainer.setPadding(new Insets(15, 0, 0, 0));
+        centerContainer.getChildren().add(tabPane);
+        VBox.setVgrow(tabPane, Priority.ALWAYS);
+        
+        root.setCenter(centerContainer);
+    }
+    
+    private void styleButton(Button button, boolean isPrimary) {
+        button.setPrefHeight(40);
+        button.setPrefWidth(120);
+        
+        if (isPrimary) {
+            button.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: 600;" +
+                "-fx-background-color: " + ICS_BLUE + ";" +
+                "-fx-text-fill: " + WHITE + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-cursor: hand;"
+            );
+            
+            button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: 600;" +
+                "-fx-background-color: " + LIGHT_BLUE + ";" +
+                "-fx-text-fill: " + WHITE + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-cursor: hand;"
+            ));
+        } else {
+            button.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: 600;" +
+                "-fx-background-color: transparent;" +
+                "-fx-text-fill: " + ICS_BLUE + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-border-color: " + ICS_BLUE + ";" +
+                "-fx-border-width: 2px;" +
+                "-fx-border-radius: 8;" +
+                "-fx-cursor: hand;"
+            );
+            
+            button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: 600;" +
+                "-fx-background-color: " + CREAM + ";" +
+                "-fx-text-fill: " + ICS_BLUE + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-border-color: " + ICS_BLUE + ";" +
+                "-fx-border-width: 2px;" +
+                "-fx-border-radius: 8;" +
+                "-fx-cursor: hand;"
+            ));
+        }
+        
+        button.setOnMouseExited(e -> styleButton(button, isPrimary));
     }
     
     private VBox createCalendarContent() {
-        VBox content = new VBox(10);
+        VBox content = new VBox(15);
         content.setPadding(new Insets(20));
-
+        content.setStyle("-fx-background-color: " + WHITE + ";");
+        
         Label titleLabel = new Label("Weekly Schedule");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-
-        // Scrollable calendar grid
+        titleLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+        
         ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setStyle("-fx-background-color: " + WHITE + ";");
         calendarGrid = new GridPane();
         calendarGrid.setGridLinesVisible(true);
         calendarGrid.setHgap(5);
         calendarGrid.setVgap(5);
         calendarGrid.setPadding(new Insets(10));
-
+        calendarGrid.setStyle(
+            "-fx-background-color: " + WHITE + ";" +
+            "-fx-grid-lines-visible: true;"
+        );
+        
         scrollPane.setContent(calendarGrid);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
-
-        setupGrid(); // adds header row and column
         
-        //populates calendar with enrolled courses
+        setupGrid();
         planner.getEnrolledCourses().clear();
         planner.getEnrolledCourses().addAll(currentStudent.getEnrolledCourses());
         fillCalendar();
-
-        // Course info panel
-        calendarInfoPane = new VBox(5);
-        calendarInfoPane.setPadding(new Insets(10));
-        calendarInfoPane.setStyle("-fx-border-color: #ccc; -fx-border-width: 1px;");
-        calendarInfoPane.getChildren().add(new Label("Select a course block to see details."));
-
+        
+        calendarInfoPane = new VBox(10);
+        calendarInfoPane.setPadding(new Insets(15));
+        calendarInfoPane.setStyle(
+            "-fx-background-color: " + CREAM + ";" +
+            "-fx-border-color: " + ICS_BLUE + ";" +
+            "-fx-border-width: 2px;" +
+            "-fx-border-radius: 8;" +
+            "-fx-background-radius: 8;"
+        );
+        
+        Label infoLabel = new Label("Select a course block to see details.");
+        infoLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 13px;" +
+            "-fx-text-fill: " + LIGHT_TEXT + ";"
+        );
+        calendarInfoPane.getChildren().add(infoLabel);
+        
         content.getChildren().addAll(titleLabel, scrollPane, calendarInfoPane);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
-
         return content;
     }
-    // Creates the enlistment tab showing course offerings with schedule information
+    
     private VBox createEnlistmentContent() {
-        VBox content = new VBox(10);
+        VBox content = new VBox(15);
         content.setPadding(new Insets(20));
-
+        content.setStyle("-fx-background-color: " + WHITE + ";");
+        
         Label titleLabel = new Label("Course Offerings - 1S 2025-2026");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-
-        // filter dropdown
+        titleLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+        
         HBox filterBox = new HBox(10);
         filterBox.setAlignment(Pos.CENTER_LEFT);
         
         Label filterLabel = new Label("Filter by Program:");
+        filterLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: 600;" +
+            "-fx-text-fill: " + DARK_TEXT + ";"
+        );
+        
         ComboBox<String> programCombo = new ComboBox<>();
         programCombo.getItems().addAll(
             "BS Computer Science",
@@ -138,40 +260,46 @@ public class StudentDashboard {
             "PhD Computer Science"
         );
         programCombo.setValue(currentStudent.getProgram());
+        programCombo.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 13px;"
+        );
         
         filterBox.getChildren().addAll(filterLabel, programCombo);
         
-        // Course offerings table setup
         TableView<Course> tableView = new TableView<>();
+        tableView.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-background-color: " + WHITE + ";"
+        );
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
+        
         TableColumn<Course, String> codeCol = new TableColumn<>("Course Code");
         codeCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCourseCode()));
-
+        
         TableColumn<Course, String> titleCol = new TableColumn<>("Course Title");
         titleCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCourseTitle()));
         titleCol.setPrefWidth(250);
-
+        
         TableColumn<Course, String> unitsCol = new TableColumn<>("Units");
         unitsCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(String.valueOf(data.getValue().getUnits())));
         unitsCol.setMaxWidth(60);
-
+        
         TableColumn<Course, String> sectionCol = new TableColumn<>("Section");
         sectionCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getSection()));
-
+        
         TableColumn<Course, String> timesCol = new TableColumn<>("Times");
         timesCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getTimes()));
-
+        
         TableColumn<Course, String> daysCol = new TableColumn<>("Days");
         daysCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getDays()));
         daysCol.setMaxWidth(100);
-
+        
         TableColumn<Course, String> roomsCol = new TableColumn<>("Rooms");
         roomsCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getRooms()));
-
+        
         tableView.getColumns().addAll(codeCol, titleCol, unitsCol, sectionCol, timesCol, daysCol, roomsCol);
-
-        // Load course offerings and setup filtering
+        
         List<Course> allOfferings = fileManager.loadCourseOfferings();
         
         programCombo.setOnAction(e -> {
@@ -193,35 +321,43 @@ public class StudentDashboard {
         programCombo.fireEvent(new javafx.event.ActionEvent());
         planner.getEnrolledCourses().clear();
         planner.getEnrolledCourses().addAll(currentStudent.getEnrolledCourses());
-
         
         enlistmentManager = new EnlistmentManager(planner, tableView, this);
         VBox enrolledPane = enlistmentManager.createEnlistmentPane();
         
         SplitPane splitPane = new SplitPane();
-        splitPane.setDividerPositions(0.7, 0.7);
+        splitPane.setDividerPositions(0.7);
         splitPane.getItems().addAll(tableView, enrolledPane);
-
+        
         content.getChildren().addAll(titleLabel, filterBox, splitPane);
         VBox.setVgrow(splitPane, Priority.ALWAYS);
-
         return content;
     }
-
-
-    // Creates the course list tab showing program curriculum with descriptions
+    
     private VBox createCourseListContent() {
-        VBox content = new VBox(10);
+        VBox content = new VBox(15);
         content.setPadding(new Insets(20));
-
+        content.setStyle("-fx-background-color: " + WHITE + ";");
+        
         Label titleLabel = new Label("Program Courses");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-
-        // Program selector dropdown
+        titleLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+        
         HBox filterBox = new HBox(10);
         filterBox.setAlignment(Pos.CENTER_LEFT);
         
         Label filterLabel = new Label("Select Program:");
+        filterLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: 600;" +
+            "-fx-text-fill: " + DARK_TEXT + ";"
+        );
+        
         ComboBox<String> programCombo = new ComboBox<>();
         programCombo.getItems().addAll(
             "BS Computer Science",
@@ -230,32 +366,38 @@ public class StudentDashboard {
             "PhD Computer Science"
         );
         programCombo.setValue(currentStudent.getProgram());
+        programCombo.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 13px;"
+        );
         
         filterBox.getChildren().addAll(filterLabel, programCombo);
-
-        // Program courses table setup
+        
         TableView<Course> tableView = new TableView<>();
+        tableView.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-background-color: " + WHITE + ";"
+        );
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
+        
         TableColumn<Course, String> codeCol = new TableColumn<>("Course Code");
         codeCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCourseCode()));
         codeCol.setPrefWidth(120);
-
+        
         TableColumn<Course, String> titleCol = new TableColumn<>("Course Title");
         titleCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCourseTitle()));
         titleCol.setPrefWidth(300);
-
+        
         TableColumn<Course, String> unitsCol = new TableColumn<>("Units");
         unitsCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(String.valueOf(data.getValue().getUnits())));
         unitsCol.setMaxWidth(60);
-
+        
         TableColumn<Course, String> descCol = new TableColumn<>("Description");
         descCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getDescription()));
         descCol.setPrefWidth(500);
-
+        
         tableView.getColumns().addAll(codeCol, titleCol, unitsCol, descCol);
-
-        // Load program courses based on selected program
+        
         programCombo.setOnAction(e -> {
             tableView.getItems().clear();
             String selectedProgram = programCombo.getValue();
@@ -264,64 +406,63 @@ public class StudentDashboard {
         });
         
         programCombo.fireEvent(new javafx.event.ActionEvent());
-
+        
         content.getChildren().addAll(titleLabel, filterBox, tableView);
         VBox.setVgrow(tableView, Priority.ALWAYS);
-
         return content;
     }
     
-    //adds header row and column
     private void setupGrid() {
         String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri"};
         for (int i = 0; i < days.length; i++) {
             Label dayLabel = new Label(days[i]);
-            dayLabel.setStyle("-fx-font-weight: bold; -fx-alignment: center;");
+            dayLabel.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-weight: 700;" +
+                "-fx-font-size: 14px;" +
+                "-fx-text-fill: " + ICS_BLUE + ";" +
+                "-fx-alignment: center;"
+            );
             dayLabel.setMinWidth(100);
             dayLabel.setAlignment(Pos.CENTER);
             calendarGrid.add(dayLabel, i + 1, 0);
         }
-
-        // hour labels from 7AM to 7PM
+        
         for (int i = 0; i < 13; i++) {
             int hour = 7 + i;
             Label timeLabel = new Label(hour + ":00");
+            timeLabel.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-size: 12px;" +
+                "-fx-text-fill: " + DARK_TEXT + ";"
+            );
             timeLabel.setMinHeight(50);
             timeLabel.setAlignment(Pos.CENTER_LEFT);
             calendarGrid.add(timeLabel, 0, i + 1);
         }
     }
     
- // adds courses to the calendar
     private void fillCalendar() {
         calendarGrid.getChildren().removeIf(node -> {
             Integer r = GridPane.getRowIndex(node);
             Integer c = GridPane.getColumnIndex(node);
-
-            // keeps header row (r = 0)
             if (r != null && r == 0) return false;
-
-            // keeps header column (c = 0)
             if (c != null && c == 0) return false;
-
-            // Remove everything else (course blocks)
             return true;
         });
-
+        
         List<Course> enrolled = planner.getEnrolledCourses();
-
         for (Course c : enrolled) {
             String times = c.getTimes();
             if (times == null || times.trim().isEmpty() || times.equalsIgnoreCase("TBA")) {
                 continue;
             }
             
-            // splits course time string into start and end times
             String[] parts = times.split("-");
             if (parts.length < 2) {
-                continue; // skips if no end time
+                continue;
             }
-             
+            
             String startRaw = parts[0].trim();
             String endRaw = parts[1].trim();
             
@@ -337,28 +478,34 @@ public class StudentDashboard {
             int rowSpan = endRow - startRow;
             
             if (rowSpan <= 0) {
-                rowSpan = 1; // minimum 1 row
+                rowSpan = 1;
             }
             
-            // course block ui
             for (String rawDay : expandDays(c.getDays())) {
                 int col = dayToColumn(rawDay);
                 
                 Label courseBlock = new Label(c.getCourseCode() + "\n" + c.getSection());
-                courseBlock.setStyle("-fx-background-color: lightblue; -fx-border-color: black; -fx-alignment: center;");
+                courseBlock.setStyle(
+                    "-fx-background-color: " + LIGHT_BLUE + ";" +
+                    "-fx-border-color: " + ICS_BLUE + ";" +
+                    "-fx-border-width: 2px;" +
+                    "-fx-text-fill: " + WHITE + ";" +
+                    "-fx-font-family: " + FONT_FAMILY + ";" +
+                    "-fx-font-size: 12px;" +
+                    "-fx-font-weight: 600;" +
+                    "-fx-alignment: center;" +
+                    "-fx-background-radius: 5;" +
+                    "-fx-border-radius: 5;"
+                );
                 courseBlock.setMinSize(100, 50 * rowSpan);
                 courseBlock.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
                 courseBlock.setOnMouseClicked(e -> showCourseInfo(c));
-
-                // Add with row span
+                
                 calendarGrid.add(courseBlock, col + 1, startRow + 1, 1, rowSpan);
             }
         }
     }
-
     
-   // day string to column index
-   // FIXED: ginawa kong 0 base indexing
     private int dayToColumn(String day) {
         switch (day) {
             case "Mon": return 0;
@@ -370,23 +517,14 @@ public class StudentDashboard {
         }
     }
     
-    //checks if  course is a lab
     public static boolean isLab(String section) {
-        if (!section.contains("-")) {
-            return false;
-        }
-        return true;
+        return section.contains("-");
     }
     
-  //checks if  course is a lecture
     public static boolean isLecture(String section) {
-        if (!isLab(section)) {
-        	return true;
-        }
-        return false;
+        return !isLab(section);
     }
     
- // converts pm hour to military time format if necessary
     public static int convertTo24Hour(String time, String section) {
         String hourPart = time.split(":")[0].trim();
         int hour;
@@ -399,50 +537,39 @@ public class StudentDashboard {
         
         boolean lab = isLab(section);
         
-        // fixed out of bounds 19:00 - 22:00 for labs
-        // should now handle 7am-12nn and 1pm-7pm for labs
-        // and 7am-12nn and 1pm-5pm for lectures
         if (lab) {
-            
             if (hour >= 7 && hour <= 12) {
-                return hour; 
+                return hour;
             } else if (hour >= 1 && hour <= 7) {
-                return hour + 12; 
+                return hour + 12;
             } else {
                 return -1;
             }
         } else {
-            
             if (hour >= 7 && hour <= 12) {
-                return hour; 
+                return hour;
             } else if (hour >= 1 && hour <= 5) {
-                return hour + 12; 
+                return hour + 12;
             } else {
                 return -1;
             }
         }
     }
-
-     
-    // maps the course time into a row (7 am class - 6 = row 1)
+    
     private int timeToRow(int hour24) {
-    	return hour24 - 6;
+        return hour24 - 6;
     }
     
-    // expands days string from WF, TTh, etc to separate days
     public static List<String> expandDays(String dayString) {
         dayString = dayString.trim();
-
         List<String> days = new ArrayList<>();
-
         if (dayString.equalsIgnoreCase("TTh")) {
             days.add("Tue");
             days.add("Thu");
         } else if (dayString.equalsIgnoreCase("WF")) {
             days.add("Wed");
             days.add("Fri");
-        }else {
-            // Single day formats like M, T, W, Th, F, Mon, Tue...
+        } else {
             switch (dayString.substring(0, 1).toUpperCase()) {
                 case "M": days.add("Mon"); break;
                 case "T": days.add("Tue"); break;
@@ -450,58 +577,67 @@ public class StudentDashboard {
                 case "F": days.add("Fri"); break;
             }
         }
-
         return days;
     }
-
-    // show selected courses' info
+    
     private void showCourseInfo(Course course) {
-    	calendarInfoPane.getChildren().clear();
-    	calendarInfoPane.getChildren().addAll(
-                new Label("Course Code: " + course.getCourseCode()),
-                new Label("Title: " + course.getCourseTitle()),
-                new Label("Units: " + course.getUnits()),
-                new Label("Section: " + course.getSection()),
-                new Label("Times: " + course.getTimes()),
-                new Label("Days: " + course.getDays()),
-                new Label("Rooms: " + course.getRooms()),
-                new Label("Description: " + course.getDescription())
+        calendarInfoPane.getChildren().clear();
+        
+        Label titleLabel = new Label("Course Information");
+        titleLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 16px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+        
+        String infoStyle = "-fx-font-family: " + FONT_FAMILY + ";" +
+                          "-fx-font-size: 13px;" +
+                          "-fx-text-fill: " + DARK_TEXT + ";";
+        
+        calendarInfoPane.getChildren().addAll(
+            titleLabel,
+            createInfoLabel("Course Code: " + course.getCourseCode(), infoStyle),
+            createInfoLabel("Title: " + course.getCourseTitle(), infoStyle),
+            createInfoLabel("Units: " + course.getUnits(), infoStyle),
+            createInfoLabel("Section: " + course.getSection(), infoStyle),
+            createInfoLabel("Times: " + course.getTimes(), infoStyle),
+            createInfoLabel("Days: " + course.getDays(), infoStyle),
+            createInfoLabel("Rooms: " + course.getRooms(), infoStyle),
+            createInfoLabel("Description: " + course.getDescription(), infoStyle)
         );
     }
     
+    private Label createInfoLabel(String text, String style) {
+        Label label = new Label(text);
+        label.setStyle(style);
+        label.setWrapText(true);
+        return label;
+    }
     
     public void refreshCalendar() {
-        // collect all nodes to remove (keep headers)
         List<javafx.scene.Node> toRemove = new ArrayList<>();
         for (javafx.scene.Node node : calendarGrid.getChildren()) {
             Integer row = GridPane.getRowIndex(node);
             Integer col = GridPane.getColumnIndex(node);
-
-            // keep header row (index 0) and header column (index 0)
             if ((row != null && row == 0) || (col != null && col == 0)) {
                 continue;
             }
-
             toRemove.add(node);
         }
-
-        //remove collected nodes
+        
         for (javafx.scene.Node node : toRemove) {
             calendarGrid.getChildren().remove(node);
         }
-
-        //   Refills the calendar
+        
         fillCalendar();
     }
     
-
     private void handleLogout() {
-        // add current enrolled courses in planner to student before saving
         currentStudent.getEnrolledCourses().clear();
         currentStudent.getEnrolledCourses().addAll(planner.getEnrolledCourses());
         
         ArrayList<Student> users = fileManager.load(FileManager.getSavePath());
-
         for (int i = 0; i < users.size(); i++) {
             if (users.get(i).getEmail().equals(currentStudent.getEmail())) {
                 users.set(i, currentStudent);
@@ -516,20 +652,19 @@ public class StudentDashboard {
         LoginView loginView = new LoginView();
         loginView.setStage(stage);
     }
-
-
+    
     public void setStage(Stage stage) {
         this.stage = stage;
         this.stage.setTitle("ICS Registration Planner - Dashboard");
         this.stage.setScene(this.scene);
         this.stage.show();
     }
-
+    
     public Scene getScene() {
         return scene;
     }
     
     public Student getCurrentStudent() {
-		return currentStudent;
-	}
+        return currentStudent;
+    }
 }
