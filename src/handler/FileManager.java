@@ -20,6 +20,8 @@ public class FileManager {
     private static final Path MIT_COURSES_PATH = Paths.get("src/database/ics_mit_courses.csv");
     private static final Path MSCS_COURSES_PATH = Paths.get("src/database/ics_mscs_courses.csv");
     private static final Path PHD_COURSES_PATH = Paths.get("src/database/ics_phd_courses.csv");
+    private static final Path CALENDAR_PATH = Paths.get("src/database/academic_calendar.csv");
+    private static final Path HOLIDAYS_PATH = Paths.get("src/database/holidays.csv");
 
     public static Path getSavePath() {
         return SAVE_PATH;
@@ -180,4 +182,55 @@ public class FileManager {
 
         return null;
     }
+    
+    // ADDED LOAD FUNCTINOS FOR CALENDAR
+    public List<String[]> loadAcademicCalendar() {
+        List<String[]> calendarData = new ArrayList<>();
+        
+        try {
+            List<String> lines = Files.readAllLines(CALENDAR_PATH);
+            
+            for (int i = 1; i < lines.size(); i++) {
+                String line = lines.get(i).trim();
+                if (line.isEmpty()) continue;
+                
+                String[] parts = line.split(",", -1);
+                if (parts.length >= 4) {
+                    calendarData.add(parts);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error loading academic calendar: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return calendarData;
+    }
+
+    public List<String[]> loadHolidays() {
+        List<String[]> holidaysData = new ArrayList<>();
+        
+        try {
+            List<String> lines = Files.readAllLines(HOLIDAYS_PATH);
+            
+            for (int i = 1; i < lines.size(); i++) {
+                String line = lines.get(i).trim();
+                if (line.isEmpty()) continue;
+                
+                String[] parts = line.split(",", -1);
+                if (parts.length >= 3) {
+                    String[] row = {parts[0].trim(), parts[1].trim(), parts[2].trim()};
+                    holidaysData.add(row);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error loading holidays: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return holidaysData;
+    }
+
+
+
 }

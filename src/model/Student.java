@@ -12,7 +12,10 @@ public class Student implements Serializable {
     private String email;
     private String password;
     private String program;
+
     private List<Course> enrolledCourses = new ArrayList<>(); 
+    // ADDED PROFILE DEFAULT PICTURE PATH
+    private String profilePicturePath = "/img/default-profile.png";
     
     public Student() {}
 
@@ -60,4 +63,15 @@ public class Student implements Serializable {
     public List<Course> getEnrolledCourses() {
         return enrolledCourses;
     }
+    
+
+
+    public String getProfilePicturePath() {
+        return profilePicturePath;
+    }
+
+    public void setProfilePicturePath(String profilePicturePath) {
+        this.profilePicturePath = profilePicturePath;
+    }
+
 }

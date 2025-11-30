@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import handler.FileManager;
@@ -13,6 +14,11 @@ import model.Student;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javafx.scene.image.Image;
+import javafx.scene.shape.SVGPath;
+
+
 
 public class StudentDashboard {
     // ICS Color Palette
@@ -34,6 +40,12 @@ public class StudentDashboard {
     private CoursePlanner planner;
     private GridPane calendarGrid;
     private VBox calendarInfoPane;
+    
+    // ADDED PROFILE
+    private ImageView profileImageView;
+    private static final double PROFILE_IMAGE_SIZE = 80;
+    private static final String DEFAULT_PROFILE_PATH = "src/img/default-profile.png";
+
     
     public StudentDashboard(Student student) {
         this.currentStudent = student;
@@ -58,6 +70,83 @@ public class StudentDashboard {
             "-fx-background-radius: 10;" +
             "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 2);"
         );
+        
+     // ADDED PROFILE SECTION
+        VBox profileBox = new VBox(5);
+        profileBox.setAlignment(Pos.CENTER);
+
+        StackPane profileContainer = new StackPane();
+        profileContainer.setPrefSize(PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE);
+        profileContainer.setStyle(
+            "-fx-background-color: " + CREAM + ";" +
+            "-fx-border-color: " + ICS_BLUE + ";" +
+            "-fx-border-width: 2px;"
+        );
+
+        // GET IMAGE VIEW
+        profileImageView = new ImageView();
+        try {
+            String imagePath = currentStudent.getProfilePicturePath();
+            if (imagePath == null || imagePath.isEmpty()) {
+                imagePath = DEFAULT_PROFILE_PATH;
+            }
+            Image profileImage = new Image(imagePath);
+            profileImageView.setImage(profileImage);
+        } catch (Exception e) {
+            try {
+                Image defaultImage = new Image(DEFAULT_PROFILE_PATH);
+                profileImageView.setImage(defaultImage);
+            } catch (Exception ex) {
+                System.out.println("Could not load profile images");
+            }
+        }
+        profileImageView.setFitWidth(PROFILE_IMAGE_SIZE);
+        profileImageView.setFitHeight(PROFILE_IMAGE_SIZE);
+        profileImageView.setPreserveRatio(true);
+
+        // Camera icon  WHEN HOVERED USING SVG FROM HERO ICONS
+        SVGPath cameraIcon = new SVGPath();
+        cameraIcon.setContent("M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z");
+        cameraIcon.setFill(javafx.scene.paint.Color.WHITE);
+        cameraIcon.setStroke(javafx.scene.paint.Color.WHITE);
+        cameraIcon.setStrokeWidth(1.5);
+        cameraIcon.setScaleX(2.5);
+        cameraIcon.setScaleY(2.5);
+
+        StackPane iconContainer = new StackPane(cameraIcon);
+        iconContainer.setStyle(
+            "-fx-background-color: rgba(0, 0, 0, 0.5);" +
+            "-fx-padding: 10;"
+        );
+        iconContainer.setVisible(false);
+
+        profileContainer.getChildren().addAll(profileImageView, iconContainer);
+
+        // when hovered show cam icon 
+        profileContainer.setOnMouseEntered(e -> {
+            iconContainer.setVisible(true);
+            profileContainer.setStyle(
+                "-fx-cursor: hand;" +
+                "-fx-background-color: " + CREAM + ";" +
+                "-fx-border-color: " + ICS_BLUE + ";" +
+                "-fx-border-width: 2px;"
+            );
+        });
+
+        profileContainer.setOnMouseExited(e -> {
+            iconContainer.setVisible(false);
+            profileContainer.setStyle(
+                "-fx-background-color: " + CREAM + ";" +
+                "-fx-border-color: " + ICS_BLUE + ";" +
+                "-fx-border-width: 2px;"
+            );
+        });
+
+        profileContainer.setOnMouseClicked(e -> handleChangePhoto());
+
+        profileBox.getChildren().add(profileContainer);
+// END PROFILE SECTION ADDED
+
         
         VBox welcomeBox = new VBox(5);
         Label welcomeLabel = new Label("Welcome, " + currentStudent.getFullName() + "!");
@@ -84,7 +173,7 @@ public class StudentDashboard {
         styleButton(logoutButton, true);
         logoutButton.setOnAction(e -> handleLogout());
         
-        topBox.getChildren().addAll(welcomeBox, spacer, logoutButton);
+        topBox.getChildren().addAll(profileBox, welcomeBox, spacer, logoutButton);
         root.setTop(topBox);
         
         // Setup tab pane
@@ -667,4 +756,47 @@ public class StudentDashboard {
     public Student getCurrentStudent() {
         return currentStudent;
     }
+    
+    // ADDED METHOD TO HANDLE PROFILE PICTURE CHANGE
+    // Source - https://stackoverflow.com/a
+    // Posted by Renis1235, modified by community. See post 'Timeline' for change history
+    // Retrieved 2025-11-30, License - CC BY-SA 4.0
+    
+    private void handleChangePhoto() {
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle("Select Profile Picture");
+        fileChooser.getExtensionFilters().add(
+            new javafx.stage.FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+        );
+        
+        java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+        
+        if (selectedFile != null) {
+            try {
+                final java.io.InputStream targetStream = new java.io.DataInputStream(
+                    new java.io.FileInputStream(selectedFile)
+                );
+                Image newImage = new Image(targetStream);
+                profileImageView.setImage(newImage);
+                
+                String imagePath = "file:" + selectedFile.getAbsolutePath();
+                currentStudent.setProfilePicturePath(imagePath);
+                
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Success");
+                alert.setHeaderText(null);
+                alert.setContentText("Profile picture updated successfully!");
+                alert.showAndWait();
+                
+            } catch (java.io.FileNotFoundException fileNotFoundException) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText(null);
+                alert.setContentText("Failed to load image: " + fileNotFoundException.getMessage());
+                alert.showAndWait();
+            }
+        }
+    }
+
+
 }

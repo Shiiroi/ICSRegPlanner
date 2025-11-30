@@ -293,31 +293,50 @@ public class RegisterView {
         });
     }
     
-    private String validateFields(TextField firstName, TextField lastName, TextField email,
-                                  PasswordField password, PasswordField confirmPassword,
-                                  ComboBox<String> program) {
-        if (firstName.getText().isEmpty() || lastName.getText().isEmpty()) {
-            return "First and Last name are required";
-        }
-        if (email.getText().isEmpty() || !email.getText().contains("@")) {
-            return "Valid email is required";
-        }
-        if (password.getText().length() < 4) {
-            return "Password must be at least 4 characters";
-        }
-        if (!password.getText().equals(confirmPassword.getText())) {
-            return "Passwords do not match";
-        }
-        if (program.getValue() == null) {
-            return "Please select a program";
-        }
-        for (Student s : userList) {
-            if (s.getEmail().equalsIgnoreCase(email.getText())) {
-                return "Email already registered";
-            }
-        }
-        return null;
-    }
+    private String validateFields(
+    		TextField firstName, TextField lastName, TextField email,
+            PasswordField password, PasswordField confirmPassword,
+            ComboBox<String> program) {
+		if (firstName.getText().isEmpty() || lastName.getText().isEmpty()) {
+			return "First and Last name are required";
+		}
+		
+		String emailError = validateEmail(email.getText());
+			if (emailError != null) {
+			return emailError;
+		}
+		
+		if (password.getText().length() < 4) {
+			return "Password must be at least 4 characters";
+		}
+		if (!password.getText().equals(confirmPassword.getText())) {
+			return "Passwords do not match";
+		}
+		if (program.getValue() == null) {
+			return "Please select a program";
+		}
+		
+		return null;
+		}
+		
+		private String validateEmail(String emailText) {
+			if (emailText.isEmpty()) {
+			return "Email is required";
+		}
+		
+		if (!emailText.contains("@") || !emailText.contains(".com")) {
+			return "Please enter a valid email address (e.g., name@mail.com)";
+		}
+		
+		for (Student s : userList) {
+			if (s.getEmail().equalsIgnoreCase(emailText)) {
+			return "Email already registered";
+			}
+		}
+		
+		return null;
+		}
+
     
     public void showAndWait() {
         stage.showAndWait();

@@ -1,6 +1,7 @@
 package application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -16,6 +17,17 @@ import handler.FileManager;
 import model.Student;
 import java.nio.file.Path;
 import java.util.ArrayList;
+// ADDED IMPORTS
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import java.util.List;
+import javafx.scene.text.Text;
+import javafx.scene.control.Control;
+
+
 
 public class LoginView {
     // ICS Color Palette
@@ -29,7 +41,11 @@ public class LoginView {
     
     private Stage stage;
     private Scene scene;
-    private VBox mainContainer;
+    
+    // ADDED LEFT AND RIGHT CONTAINERS
+    private SplitPane mainContainer;
+    private VBox leftContainer;
+    private VBox rightContainer;
     private GridPane grid;
     
     private TextField emailField;
@@ -53,13 +69,22 @@ public class LoginView {
     }
     
     private void setProperties() {
+    	// CHANGED FROM VBOX TO HBOX
         // Main container with gradient background
-        mainContainer = new VBox(30);
-        mainContainer.setAlignment(Pos.CENTER);
-        mainContainer.setPadding(new Insets(40));
+        mainContainer = new SplitPane();
         mainContainer.setStyle(
             "-fx-background-color: linear-gradient(to bottom, " + CREAM + ", " + WHITE + ");"
         );
+        
+        // LEFT SIDE LOGIN FORM
+        leftContainer = new VBox(30);
+        leftContainer.setAlignment(Pos.CENTER);
+        leftContainer.setPadding(new Insets(40));
+        leftContainer.setPrefWidth(550);
+        leftContainer.setStyle(
+            "-fx-background-color: linear-gradient(to bottom, " + CREAM + ", " + WHITE + ");"
+        );
+        
         
         // Load and display ICS logo
         try {
@@ -67,7 +92,9 @@ public class LoginView {
             ImageView logoView = new ImageView(logo);
             logoView.setFitWidth(180);
             logoView.setPreserveRatio(true);
-            mainContainer.getChildren().add(logoView);
+            // ADDED IMG TO LEFT CONTAINER RATHER THAN MAIN
+            leftContainer.getChildren().add(logoView); 
+
         } catch (Exception e) {
             System.out.println("Logo not found: " + e.getMessage());
         }
@@ -214,7 +241,7 @@ public class LoginView {
         // Initialize buttons with improved styling
         Button loginBtn = new Button("Login");
         styleButton(loginBtn, ICS_BLUE, WHITE, true);
-        loginBtn.setPrefWidth(140);  // Make all buttons same width
+        loginBtn.setPrefWidth(140); 
         
         Button registerBtn = new Button("Register");
         styleButton(registerBtn, ICS_BLUE, WHITE, true);
@@ -240,11 +267,61 @@ public class LoginView {
         registerBtn.setOnAction(e -> handleRegister());
         exitButton.setOnAction(e -> System.exit(0));
         
-        // Add grid to main container
-        mainContainer.getChildren().add(grid);
+        // CHANGED ADD TO MAIN CONTAINER TO LEFT CONAITNER
+        // Add grid to left container
+        leftContainer.getChildren().add(grid);
+
+        // ==================== RIGHT SIDE CALENDAR ====================
+        rightContainer = new VBox(20);
+        rightContainer.setPadding(new Insets(40, 30, 40, 30));
+        rightContainer.setStyle("-fx-background-color: " + WHITE + ";");
+
+        // Academic Calendar Section
+        Label calendarTitle = new Label("Academic Calendar 2025-2026");
+        calendarTitle.setStyle(
+            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+
+        TableView<String[]> calendarTable = createCalendarTable();
+
+        // Holidays Section
+        Label holidaysTitle = new Label("Holidays");
+        holidaysTitle.setStyle(
+            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+
+        TableView<String[]> holidaysTable = createHolidaysTable();
+
+        // Add all elements to right container
+        rightContainer.getChildren().addAll(calendarTitle, calendarTable, holidaysTitle, holidaysTable);
+
+        // Wrap right container in ScrollPane
+        ScrollPane scrollPane = new ScrollPane(rightContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);  
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);  
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);  
+        scrollPane.setStyle(
+            "-fx-background: " + WHITE + ";" +
+            "-fx-background-color: " + WHITE + ";"
+        );
+
+        // ==================== ADD BOTH SIDES TO MAIN CONTAINER ====================
+        mainContainer.getItems().addAll(leftContainer, scrollPane);
+        mainContainer.setDividerPositions(0.5);
+       
+
+      
         
-        // Create scene
-        scene = new Scene(mainContainer, 550, 600);
+        // Create scene with wider width
+        scene = new Scene(mainContainer, 1100, 700);
+
     }
     
     private void styleButton(Button button, String bgColor, String textColor, boolean isPrimary) {
@@ -344,12 +421,135 @@ public class LoginView {
             messageLabel.setText("✓ Registration successful! Please login.");
         }
     }
+  
+    // CALENDAR VIEW STYLING AND CREATION
+    private TableView<String[]> createCalendarTable() {
+        TableView<String[]> table = new TableView<>();
+        table.setStyle(
+            "-fx-background-color: " + WHITE + ";" +
+            "-fx-border-color: " + CREAM + ";" +
+            "-fx-border-width: 1px;"
+        );
+        
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<String[], String> eventCol = new TableColumn<>("Event");
+        eventCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()[0]));
+        eventCol.setPrefWidth(200);
+
+        TableColumn<String[], String> sem1Col = new TableColumn<>("1st Semester");
+        sem1Col.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()[1]));
+        sem1Col.setPrefWidth(120);
+
+        TableColumn<String[], String> sem2Col = new TableColumn<>("2nd Semester");
+        sem2Col.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()[2]));
+        sem2Col.setPrefWidth(120);
+
+        TableColumn<String[], String> midyearCol = new TableColumn<>("Midyear");
+        midyearCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()[3]));
+        midyearCol.setPrefWidth(100);
+
+        table.getColumns().addAll(eventCol, sem1Col, sem2Col, midyearCol);
+
+	     // Enable text wrapping for all columns
+	     wrapColumnText(eventCol);
+	     wrapColumnText(sem1Col);
+	     wrapColumnText(sem2Col);
+	     wrapColumnText(midyearCol);
+
+        // Load data using FileManager
+        List<String[]> calendarData = fileManager.loadAcademicCalendar();
+        table.getItems().addAll(calendarData);
+
+        return table;
+    }
+    // HOLIDAY TABLE CREATION
+    private TableView<String[]> createHolidaysTable() {
+        TableView<String[]> table = new TableView<>();
+        table.setStyle(
+            "-fx-background-color: " + WHITE + ";" +
+            "-fx-border-color: " + CREAM + ";" +
+            "-fx-border-width: 1px;"
+        );
+        
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        
+
+        TableColumn<String[], String> yearCol = new TableColumn<>("Year");
+        yearCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()[0]));
+        yearCol.setPrefWidth(80);
+
+        TableColumn<String[], String> dateCol = new TableColumn<>("Date");
+        dateCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()[1]));
+        dateCol.setPrefWidth(150);
+
+        TableColumn<String[], String> holidayCol = new TableColumn<>("Holiday");
+        holidayCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()[2]));
+        holidayCol.setPrefWidth(250);
+
+        table.getColumns().addAll(yearCol, dateCol, holidayCol);
+
+     // Enable text wrapping for all columns
+     wrapColumnText(yearCol);
+     wrapColumnText(dateCol);
+     wrapColumnText(holidayCol);
+
+
+        // Load data using FileManager
+        List<String[]> holidaysData = fileManager.loadHolidays();
+        table.getItems().addAll(holidaysData);
+
+        return table;
+    }
+
+ // Helper method to create wrapped text cells using Text instead of Label
+    private <T> void wrapColumnText(TableColumn<T, String> column) {
+        column.setCellFactory(tc -> {
+            TableCell<T, String> cell = new TableCell<T, String>() {
+                private final Text text = new Text();
+
+                {
+                    text.wrappingWidthProperty().bind(column.widthProperty().subtract(20));
+                    text.setStyle(
+                        "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+                        "-fx-font-size: 12px;" +
+                        "-fx-fill: " + DARK_TEXT + ";"
+                    );
+                    setGraphic(text);
+                    setPrefHeight(Control.USE_COMPUTED_SIZE);
+                    setPadding(new Insets(10, 10, 10, 10)); 
+                }
+
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        text.setText(null);
+                    } else {
+                        text.setText(item);
+                    }
+                }
+            };
+            return cell;
+        });
+    }
+
     
     public void setStage(Stage stage) {
         this.stage = stage;
         this.stage.setTitle("ICS Registration Planner - Login");
         this.stage.setScene(this.scene);
         this.stage.show();
+        
+        // Source - https://stackoverflow.com/a
+        // Posted by Miss Chanandler Bong
+        // Retrieved 2025-11-30, License - CC BY-SA 4.0
+
+        // Remove split pane dividers for cleaner look
+           for (Node node : mainContainer.lookupAll(".split-pane-divider")) {
+               node.setVisible(false);
+           }
+
     }
     
     public Scene getScene() {
