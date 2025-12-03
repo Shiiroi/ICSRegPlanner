@@ -319,23 +319,23 @@ public class RegisterView {
 		return null;
 		}
 		
-		private String validateEmail(String emailText) {
-			if (emailText.isEmpty()) {
-			return "Email is required";
-		}
-		
-		if (!emailText.contains("@") || !emailText.contains(".com")) {
-			return "Please enter a valid email address (e.g., name@mail.com)";
-		}
-		
-		for (Student s : userList) {
-			if (s.getEmail().equalsIgnoreCase(emailText)) {
-			return "Email already registered";
-			}
-		}
-		
-		return null;
-		}
+    private String validateEmail(String emailText) {
+        if (emailText.isEmpty()) {
+            return "Email is required";
+        }
+        
+        if (!emailText.contains("@") || !emailText.endsWith("@up.edu.ph")) {
+            return "Please enter a valid UP email address (e.g., name@up.edu.ph)";
+        }
+        
+        for (Student s : userList) {
+            if (s.getEmail().equalsIgnoreCase(emailText)) {
+                return "Email already registered";
+            }
+        }
+        
+        return null;
+    }
 
     
     public void showAndWait() {

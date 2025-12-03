@@ -2,22 +2,32 @@ package model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Student implements Serializable {
-
+	private static final long serialVersionUID = -1L;
     private String firstName;
     private String middleName;
     private String lastName;
     private String email;
     private String password;
     private String program;
-
-    private List<Course> enrolledCourses = new ArrayList<>(); 
+    private transient CoursePlanner coursePlanner; 
     // ADDED PROFILE DEFAULT PICTURE PATH
     private String profilePicturePath = "/img/default-profile.png";
     
-    public Student() {}
+    // NEW: save the courses inside the selected schedule
+    private Map<String, List<Course>> savedSchedules = new HashMap<>();
+
+    // NEW: keep a reference to the currently active schedule name
+    private String activeScheduleName = "Default";
+    
+    public Student() {
+    	this.coursePlanner = new CoursePlanner();
+    }
 
     public Student(String firstName, String middleName, String lastName, 
                 String email, String password, String program) {
@@ -27,7 +37,10 @@ public class Student implements Serializable {
         this.email = email;
         this.password = password;
         this.program = program;
-        this.enrolledCourses = new ArrayList<>();
+        //NEW: add the courses to default initially
+        this.savedSchedules.put("Default", new ArrayList<>());
+        this.activeScheduleName = "Default";
+        this.coursePlanner = new CoursePlanner();
     }
 
     // getter and setters
@@ -56,12 +69,40 @@ public class Student implements Serializable {
         return firstName + " " + lastName;
     }
     
-    public void addCourse(Course course) { enrolledCourses.add(course); }
-    
-    public void removeCourse(Course course) { enrolledCourses.remove(course); }
-    
-    public List<Course> getEnrolledCourses() {
-        return enrolledCourses;
+    //NEW: added getters and setters for the schedules
+    public void setSchedule(String name, List<Course> courses) {
+    	if (name != null && courses != null) {
+            savedSchedules.put(name, new ArrayList<>(courses));
+        }
+    }
+
+    public List<Course> getSchedule(String name) {
+        return savedSchedules.getOrDefault(name, new ArrayList<>());
+    }
+
+    public List<Course> getActiveSchedule() {
+        return getSchedule(activeScheduleName);
+    }
+
+    public void setActiveSchedule(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            this.activeScheduleName = name;
+            savedSchedules.putIfAbsent(name, new ArrayList<>());
+        }
+    }
+
+    public Set<String> getSavedScheduleNames() {
+        return savedSchedules.keySet();
+    }
+
+    public String getActiveScheduleName() {
+        return activeScheduleName;
+    }
+    public CoursePlanner getCoursePlanner() {
+        if (coursePlanner == null) {
+            coursePlanner = new CoursePlanner();
+        }
+        return coursePlanner;
     }
     
 

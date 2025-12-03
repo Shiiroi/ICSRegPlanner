@@ -14,11 +14,9 @@ import model.Student;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import javafx.scene.image.Image;
 import javafx.scene.shape.SVGPath;
-
-
+import javafx.scene.text.Text;
 
 public class StudentDashboard {
     // ICS Color Palette
@@ -37,10 +35,12 @@ public class StudentDashboard {
     private Student currentStudent;
     private FileManager fileManager;
     private EnlistmentManager enlistmentManager;
-    private CoursePlanner planner;
     private GridPane calendarGrid;
     private VBox calendarInfoPane;
+    private ScheduleManager scheduleManager; // NEW: added for multiple schedules
+    private ScheduleComparisonView compareView; // NEW: added for comparison
     
+    // NEW: removed planners
     // ADDED PROFILE
     private ImageView profileImageView;
     private static final double PROFILE_IMAGE_SIZE = 80;
@@ -53,8 +53,6 @@ public class StudentDashboard {
         this.root = new BorderPane();
         this.scene = new Scene(root, 1280, 720);
         
-        planner = new CoursePlanner();
-        planner.setEnrolledCourses(currentStudent.getEnrolledCourses());
         setProperties();
     }
     
@@ -176,6 +174,10 @@ public class StudentDashboard {
         topBox.getChildren().addAll(profileBox, welcomeBox, spacer, logoutButton);
         root.setTop(topBox);
         
+     // NEW: initialize schedule management components
+        this.compareView = new ScheduleComparisonView(currentStudent, this::onScheduleChanged);
+        this.scheduleManager = new ScheduleManager(currentStudent, this::onScheduleChanged);
+        
         // Setup tab pane
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -195,7 +197,14 @@ public class StudentDashboard {
         Tab calendarTab = new Tab("Calendar");
         calendarTab.setContent(createCalendarContent());
         
-        tabPane.getTabs().addAll(courseListTab, enlistmentTab, calendarTab);
+        Tab aboutTab = new Tab("About");
+        aboutTab.setContent(createAboutContent());
+        
+     // NEW: added Compare Schedules tab
+        Tab compareTab = new Tab("Compare Schedules");
+        compareTab.setContent(compareView.createContent());
+        
+        tabPane.getTabs().addAll(aboutTab, courseListTab, enlistmentTab, calendarTab, compareTab);
         
         VBox centerContainer = new VBox(15);
         centerContainer.setPadding(new Insets(15, 0, 0, 0));
@@ -273,8 +282,15 @@ public class StudentDashboard {
             "-fx-text-fill: " + ICS_BLUE + ";"
         );
         
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setStyle("-fx-background-color: " + WHITE + ";");
+        // NEW: Create split pane with calendar on left, info on right
+        SplitPane splitPane = new SplitPane();
+        splitPane.setDividerPositions(0.65);
+        
+        // LEFT SIDE: Calendar
+        VBox leftPane = new VBox(10);
+        leftPane.setPadding(new Insets(10));
+        leftPane.setStyle("-fx-background-color: " + WHITE + ";");
+        
         calendarGrid = new GridPane();
         calendarGrid.setGridLinesVisible(true);
         calendarGrid.setHgap(5);
@@ -285,14 +301,29 @@ public class StudentDashboard {
             "-fx-grid-lines-visible: true;"
         );
         
-        scrollPane.setContent(calendarGrid);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
+        ScrollPane calendarScroll = new ScrollPane(calendarGrid);
+        calendarScroll.setFitToWidth(true);
+        calendarScroll.setFitToHeight(true);
+        calendarScroll.setStyle("-fx-background-color: " + WHITE + ";");
         
         setupGrid();
-        planner.getEnrolledCourses().clear();
-        planner.getEnrolledCourses().addAll(currentStudent.getEnrolledCourses());
         fillCalendar();
+        
+        leftPane.getChildren().add(calendarScroll);
+        VBox.setVgrow(calendarScroll, Priority.ALWAYS);
+        
+        // RIGHT SIDE: Course Information
+        VBox rightPane = new VBox(10);
+        rightPane.setPadding(new Insets(10));
+        rightPane.setStyle("-fx-background-color: " + WHITE + ";");
+        
+        Label infoTitle = new Label("Course Information");
+        infoTitle.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 18px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
         
         calendarInfoPane = new VBox(10);
         calendarInfoPane.setPadding(new Insets(15));
@@ -312,8 +343,17 @@ public class StudentDashboard {
         );
         calendarInfoPane.getChildren().add(infoLabel);
         
-        content.getChildren().addAll(titleLabel, scrollPane, calendarInfoPane);
-        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        ScrollPane infoScroll = new ScrollPane(calendarInfoPane);
+        infoScroll.setFitToWidth(true);
+        infoScroll.setStyle("-fx-background-color: " + WHITE + ";");
+        
+        rightPane.getChildren().addAll(infoTitle, infoScroll);
+        VBox.setVgrow(infoScroll, Priority.ALWAYS);
+        
+        splitPane.getItems().addAll(leftPane, rightPane);
+        
+        content.getChildren().addAll(titleLabel, splitPane);
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
         return content;
     }
     
@@ -408,10 +448,8 @@ public class StudentDashboard {
         });
         
         programCombo.fireEvent(new javafx.event.ActionEvent());
-        planner.getEnrolledCourses().clear();
-        planner.getEnrolledCourses().addAll(currentStudent.getEnrolledCourses());
-        
-        enlistmentManager = new EnlistmentManager(planner, tableView, this);
+     // NEW: pass List<Course> instead of CoursePlanner
+        enlistmentManager = new EnlistmentManager(currentStudent.getActiveSchedule(), tableView, this);
         VBox enrolledPane = enlistmentManager.createEnlistmentPane();
         
         SplitPane splitPane = new SplitPane();
@@ -487,6 +525,9 @@ public class StudentDashboard {
         
         tableView.getColumns().addAll(codeCol, titleCol, unitsCol, descCol);
         
+        wrapColumnText(titleCol);
+        wrapColumnText(descCol);
+        
         programCombo.setOnAction(e -> {
             tableView.getItems().clear();
             String selectedProgram = programCombo.getValue();
@@ -501,8 +542,165 @@ public class StudentDashboard {
         return content;
     }
     
+    private ScrollPane createAboutContent() {
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setStyle("-fx-background-color: " + WHITE + ";");
+
+        Label titleLabel = new Label("Welcome to ICS DANGAL!");
+        titleLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 25px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+
+        Label overviewLabel = new Label("Overview");
+        overviewLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+        
+        Label overviewText = new Label(
+        	
+            "DANGAL is a JavaFX-based course registration planner created for the students of the Institute of Computer Science (ICS). " +
+            "It aims to provide learners a way to organize and plan their subjects for the First Semester of Academic Year 2025–2026 in a simple, interactive, and visually clear way.\n\n" +
+            "The system provides a dynamic weekly schedule, a course-selection interface, smart features that guide users in choosing the correct courses for their degree programs. "+
+            "Whether the student is taking BSCS, MSCS, MIT, or PhD Computer Science, DANGAL ensures that their planner only takes in valid courses for their curriculum. "+
+            "DANGAL also includes other small quality of life features that can help improve user experience."+
+            "This About page gives a complete overview of the system’s goals, functionalities, and how students can use it effectively.\n\n"
+        );
+        overviewText.setWrapText(true);
+        overviewText.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 14px;" +
+            "-fx-text-fill: " + DARK_TEXT + ";"
+        );
+        
+        Label infoLabel = new Label("What this App does");
+        infoLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+        
+        Label infoText = new Label(
+        	
+            "DANGAL helps students plan their subjects more easily by providing:\n"+
+            
+    		"\u2022 Program-restricted planning\n" +
+    	    "   You can only add courses that belong to the degree program you selected during registration. This prevents mistakes like BSCS students adding MSCS or PhD courses.\n\n" +
+    	    "\u2022 Visual weekly calendar\n" +
+    	    "   When you add a course, its day and time slot appear on your weekly schedule. This helps you see how your classes fit together.\n\n" +
+    	    "\u2022 Complete course information\n" +
+    	    "   Before adding a course, students can view its complete details such as:\n"+
+    	    "   \t\u2022code\n\t\u2022title\n\t\u2022description\n\t\u2022units\n\t\u2022schedule\n\t\u2022instructor\n\t\u2022program\n\n" +
+    	    "\u2022 Automatic conflict checking\n" +
+    	    "   The system checks for:\n"+
+    	    "   \t\u2022Overlapping time slots\n\t\u2022Duplicate course entries\n\t\u2022Courses that do not belong to the student’s program\n\n" +
+    	    "\u2022 Secure login system\n" +
+    	    "   Students must register and create an account before using the planner.\n"+
+    	    "	Each account stores:\n"+
+    	    "	\u2022Username\n\t\u2022Password\n\t\u2022Selected Degree Program\n\t\u2022Planned Courses\n"+
+    	    "This ensures a personalized and secure experience every time the user logs in.\n"
+        );
+        infoText.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 14px;" +
+            "-fx-text-fill: " + DARK_TEXT + ";"
+        );
+        
+        Label howToLabel = new Label("How to Use This App");
+        howToLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+
+        Label howToText = new Label(
+            "1. Create an account and choose your program\n"+
+            "2. Log in to open your dashboard\n"+
+            "3. Browse the list of courses offered for 1st Semester AY 2025–2026.\n" +
+            "4. Press 'Enlist' to place it on to your enlisted courses.\n" +
+            "5. The course will appear automatically on the correct day and time slot in your weekly schedule.\n" +
+            "6. Click a course to view its full details like units, schedule, and instructor.\n" +
+            "7. You may edit or remove courses anytime.\n"+
+            "DANGAL is designed so that students can freely experiment with schedules while staying within the academic rules of their program.\n"
+            // dagadag pa kayo if may other stuff
+        );
+        howToText.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-size: 14px;" +
+                "-fx-text-fill: " + DARK_TEXT + ";"
+        );
+        
+        Label featuresLabel = new Label("Important Features & Notes");
+        featuresLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+
+        Label featuresText = new Label(
+            "\u2022 You may only add courses from your chosen degree program\n"+ //ano ulet sabi ni sir tungkol dito 
+            "\u2022 The system automatically detects date and time conflicts to ensure a valid schedule.\n"+
+            "\u2022 Course data comes from the official ICS list for AY 2025–2026\n"
+        );
+        featuresText.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 14px;" +
+            "-fx-text-fill: " + DARK_TEXT + ";"
+        );
+        
+        Label creditsLabel = new Label("Credits"); //di ata talaga to kasama sa about pero sinama ko narin for now padelete nalang kung ayaw nyo
+        creditsLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: 700;" +
+            "-fx-text-fill: " + ICS_BLUE + ";"
+        );
+
+        Label creditsText = new Label(
+            "Team Name: this.getName()\n\n"+ 
+            "Developers:\n"+
+            "\u2022 MAGWILI, VINCE ROI SOLANO\n"+ 
+            "\u2022 MANUEL, IVAN ERICK GONZALES\n"+
+            "\u2022 NIÑO, BOBBY FROI SOLIVEN\n"+
+            "\u2022 OLIVO, RAFAEL SAM GELISANGA\n"+
+            "Instructor: CARL ANGELO G. ANGCANA\n"+
+            "Course: CMSC22 UV-3L\n"+
+            "Semester: First Semester, AY 2025–2026"
+        );
+        creditsText.setStyle(
+                "-fx-font-family: " + FONT_FAMILY + ";" +
+                "-fx-font-size: 14px;" +
+                "-fx-text-fill: " + DARK_TEXT + ";"
+        );
+
+        
+        content.getChildren().addAll(titleLabel, 
+        		overviewLabel, overviewText,
+        		infoLabel, infoText,
+        		howToLabel, howToText,
+        		featuresLabel, featuresText,
+        		creditsLabel, creditsText //remove to kung ayaw nyo isama credits
+        );
+        
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPannable(true);
+        scrollPane.setStyle("-fx-background: " + WHITE + "; -fx-border-color: transparent;");
+
+        return scrollPane;
+    }
+    
     private void setupGrid() {
-        String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri"};
+        String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
         for (int i = 0; i < days.length; i++) {
             Label dayLabel = new Label(days[i]);
             dayLabel.setStyle(
@@ -535,12 +733,18 @@ public class StudentDashboard {
         calendarGrid.getChildren().removeIf(node -> {
             Integer r = GridPane.getRowIndex(node);
             Integer c = GridPane.getColumnIndex(node);
+
+            // keeps header row (r = 0)
             if (r != null && r == 0) return false;
+
+            // keeps header column (c = 0)
             if (c != null && c == 0) return false;
+
+            // Remove everything else (course blocks)
             return true;
         });
         
-        List<Course> enrolled = planner.getEnrolledCourses();
+        List<Course> enrolled = currentStudent.getActiveSchedule();
         for (Course c : enrolled) {
             String times = c.getTimes();
             if (times == null || times.trim().isEmpty() || times.equalsIgnoreCase("TBA")) {
@@ -555,11 +759,23 @@ public class StudentDashboard {
             String startRaw = parts[0].trim();
             String endRaw = parts[1].trim();
             
-            int start24 = convertTo24Hour(startRaw, c.getSection());
-            int end24 = convertTo24Hour(endRaw, c.getSection());
+         // NEW: fixed 5-7pm lab classes
+            int startHour = parseHour(startRaw);
+            int endHour = parseHour(endRaw);
+            if (startHour == -1 || endHour == -1) continue;
             
-            if (start24 < 0 || end24 < 0) {
-                continue;
+            int start24, end24;
+            if (endHour < startHour) {
+                start24 = startHour;
+                end24 = (endHour == 12) ? 12 : endHour + 12;
+            } else {
+                if (startHour >= 7) {
+                    start24 = startHour;
+                    end24 = endHour;
+                } else {
+                    start24 = (startHour == 12) ? 12 : startHour + 12;
+                    end24 = (endHour == 12) ? 12 : endHour + 12;
+                }
             }
             
             int startRow = timeToRow(start24);
@@ -572,6 +788,7 @@ public class StudentDashboard {
             
             for (String rawDay : expandDays(c.getDays())) {
                 int col = dayToColumn(rawDay);
+                if (col == -1) continue;
                 
                 Label courseBlock = new Label(c.getCourseCode() + "\n" + c.getSection());
                 courseBlock.setStyle(
@@ -595,6 +812,7 @@ public class StudentDashboard {
         }
     }
     
+ // NEW: added saturday for grad classes
     private int dayToColumn(String day) {
         switch (day) {
             case "Mon": return 0;
@@ -602,6 +820,7 @@ public class StudentDashboard {
             case "Wed": return 2;
             case "Thu": return 3;
             case "Fri": return 4;
+            case "Sat": return 5;
             default: return -1;
         }
     }
@@ -613,7 +832,17 @@ public class StudentDashboard {
     public static boolean isLecture(String section) {
         return !isLab(section);
     }
-    
+
+    // NEW: fixed 5-7pm lab classes
+    private int parseHour(String timeStr) {
+        try {
+            String hourPart = timeStr.split(":")[0].trim();
+            return Integer.parseInt(hourPart);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
     public static int convertTo24Hour(String time, String section) {
         String hourPart = time.split(":")[0].trim();
         int hour;
@@ -627,52 +856,64 @@ public class StudentDashboard {
         boolean lab = isLab(section);
         
         if (lab) {
-            if (hour >= 7 && hour <= 12) {
-                return hour;
+            if (hour >= 7 && hour <= 12) { 
+                return hour; 
             } else if (hour >= 1 && hour <= 7) {
-                return hour + 12;
+                return hour + 12; 
             } else {
                 return -1;
             }
         } else {
             if (hour >= 7 && hour <= 12) {
-                return hour;
-            } else if (hour >= 1 && hour <= 5) {
-                return hour + 12;
+                return hour; 
+            } else if (hour >= 1 && hour <= 6) {
+                return hour + 12; 
             } else {
                 return -1;
             }
         }
     }
-    
+
     private int timeToRow(int hour24) {
-        return hour24 - 6;
+    	return hour24 - 6;
     }
-    
+
+    // FIXED: included Thursday and Saturday, and full date strings (Tues, Thurs)
     public static List<String> expandDays(String dayString) {
         dayString = dayString.trim();
         List<String> days = new ArrayList<>();
+
         if (dayString.equalsIgnoreCase("TTh")) {
             days.add("Tue");
             days.add("Thu");
         } else if (dayString.equalsIgnoreCase("WF")) {
             days.add("Wed");
             days.add("Fri");
-        } else {
-            switch (dayString.substring(0, 1).toUpperCase()) {
-                case "M": days.add("Mon"); break;
-                case "T": days.add("Tue"); break;
-                case "W": days.add("Wed"); break;
-                case "F": days.add("Fri"); break;
-            }
+        } else if (dayString.equalsIgnoreCase("M") || dayString.equalsIgnoreCase("Mon")) {
+            days.add("Mon");
+        } else if (dayString.equalsIgnoreCase("T") || dayString.equalsIgnoreCase("Tue") || dayString.equalsIgnoreCase("Tues")) {
+            days.add("Tue");
+        } else if (dayString.equalsIgnoreCase("W") || dayString.equalsIgnoreCase("Wed")) {
+            days.add("Wed");
+        } else if (dayString.equalsIgnoreCase("Th") || dayString.equalsIgnoreCase("Thu") || dayString.equalsIgnoreCase("Thurs")) {
+            days.add("Thu");
+        } else if (dayString.equalsIgnoreCase("F") || dayString.equalsIgnoreCase("Fri")) {
+            days.add("Fri");
+        } else if (dayString.equalsIgnoreCase("S") || dayString.equalsIgnoreCase("Sat")) {
+            days.add("Sat");
         }
+
         return days;
     }
     
     private void showCourseInfo(Course course) {
         calendarInfoPane.getChildren().clear();
         
-        Label titleLabel = new Label("Course Information");
+        // Header with title and back button
+        HBox headerBox = new HBox();
+        headerBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Label titleLabel = new Label("Course Details");
         titleLabel.setStyle(
             "-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 16px;" +
@@ -680,12 +921,64 @@ public class StudentDashboard {
             "-fx-text-fill: " + ICS_BLUE + ";"
         );
         
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        
+        // Back button on the right
+        Button backButton = new Button("← Back");
+        backButton.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 12px;" +
+            "-fx-font-weight: 600;" +
+            "-fx-background-color: " + CREAM + ";" +
+            "-fx-text-fill: " + ICS_BLUE + ";" +
+            "-fx-background-radius: 6;" +
+            "-fx-border-color: " + ICS_BLUE + ";" +
+            "-fx-border-width: 1px;" +
+            "-fx-border-radius: 6;" +
+            "-fx-cursor: hand;" +
+            "-fx-padding: 5 10 5 10;"
+        );
+        
+        backButton.setOnMouseEntered(e -> backButton.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 12px;" +
+            "-fx-font-weight: 600;" +
+            "-fx-background-color: " + ICS_BLUE + ";" +
+            "-fx-text-fill: " + WHITE + ";" +
+            "-fx-background-radius: 6;" +
+            "-fx-border-color: " + ICS_BLUE + ";" +
+            "-fx-border-width: 1px;" +
+            "-fx-border-radius: 6;" +
+            "-fx-cursor: hand;" +
+            "-fx-padding: 5 10 5 10;"
+        ));
+        
+        backButton.setOnMouseExited(e -> backButton.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 12px;" +
+            "-fx-font-weight: 600;" +
+            "-fx-background-color: " + CREAM + ";" +
+            "-fx-text-fill: " + ICS_BLUE + ";" +
+            "-fx-background-radius: 6;" +
+            "-fx-border-color: " + ICS_BLUE + ";" +
+            "-fx-border-width: 1px;" +
+            "-fx-border-radius: 6;" +
+            "-fx-cursor: hand;" +
+            "-fx-padding: 5 10 5 10;"
+        ));
+        
+        backButton.setOnAction(e -> resetCourseInfo());
+        
+        headerBox.getChildren().addAll(titleLabel, spacer, backButton);
+        
         String infoStyle = "-fx-font-family: " + FONT_FAMILY + ";" +
                           "-fx-font-size: 13px;" +
                           "-fx-text-fill: " + DARK_TEXT + ";";
         
         calendarInfoPane.getChildren().addAll(
-            titleLabel,
+            headerBox,
+            new Separator(),
             createInfoLabel("Course Code: " + course.getCourseCode(), infoStyle),
             createInfoLabel("Title: " + course.getCourseTitle(), infoStyle),
             createInfoLabel("Units: " + course.getUnits(), infoStyle),
@@ -695,6 +988,19 @@ public class StudentDashboard {
             createInfoLabel("Rooms: " + course.getRooms(), infoStyle),
             createInfoLabel("Description: " + course.getDescription(), infoStyle)
         );
+    }
+
+    // RESET INFO PANE
+    private void resetCourseInfo() {
+        calendarInfoPane.getChildren().clear();
+        
+        Label infoLabel = new Label("Select a course block to see details.");
+        infoLabel.setStyle(
+            "-fx-font-family: " + FONT_FAMILY + ";" +
+            "-fx-font-size: 13px;" +
+            "-fx-text-fill: " + LIGHT_TEXT + ";"
+        );
+        calendarInfoPane.getChildren().add(infoLabel);
     }
     
     private Label createInfoLabel(String text, String style) {
@@ -722,10 +1028,19 @@ public class StudentDashboard {
         fillCalendar();
     }
     
-    private void handleLogout() {
-        currentStudent.getEnrolledCourses().clear();
-        currentStudent.getEnrolledCourses().addAll(planner.getEnrolledCourses());
+    private void onScheduleChanged() {
+        refreshCalendar();
         
+        if (enlistmentManager != null) {
+            enlistmentManager.updateEnrolledList(currentStudent.getActiveSchedule());
+        }
+        
+        if (compareView != null) {
+            compareView.onScheduleChanged(currentStudent.getActiveScheduleName());
+        }
+    }
+    
+    private void handleLogout() {
         ArrayList<Student> users = fileManager.load(FileManager.getSavePath());
         for (int i = 0; i < users.size(); i++) {
             if (users.get(i).getEmail().equals(currentStudent.getEmail())) {
@@ -735,7 +1050,7 @@ public class StudentDashboard {
         }
         
         System.out.println("Logging out...");
-        System.out.println("Saving " + currentStudent.getEnrolledCourses().size() + " courses.");
+        System.out.println("Saving " + currentStudent.getActiveSchedule().size() + " courses.");
         fileManager.save(users, FileManager.getSavePath());
         
         LoginView loginView = new LoginView();
@@ -797,6 +1112,44 @@ public class StudentDashboard {
             }
         }
     }
+    
+ // Wrap text in cell
+    private <T> void wrapColumnText(TableColumn<T, String> column) {
+        column.setCellFactory(tc -> {
+            TableCell<T, String> cell = new TableCell<T, String>() {
+                private final Text text = new Text();
 
+                {
+                    text.wrappingWidthProperty().bind(column.widthProperty().subtract(20));
+                    text.setStyle(
+                        "-fx-font-family: " + FONT_FAMILY + ";" +
+                        "-fx-font-size: 12px;" +
+                        "-fx-fill: " + DARK_TEXT + ";"
+                    );
+                    setGraphic(text);
+                    setPrefHeight(Control.USE_COMPUTED_SIZE);
+                    setPadding(new Insets(10, 10, 10, 10));
+                }
 
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        text.setText(null);
+                    } else {
+                        text.setText(item);
+                    }
+                }
+            };
+            return cell;
+        });
+    }
+
+    
+    // called when schedule changes
+    public void notifyScheduleChanged() {
+        if (compareView != null) {
+            compareView.refreshView();
+        }
+    }
 }

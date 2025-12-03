@@ -48,19 +48,20 @@ public class CoursePlanner {
         return totalUnits;
     } 
 
+    // Check for schedule conflicts 
     public boolean hasConflict(Course newCourse) {
-        // check each enrolled course against the new course
+        // Iterate through all enrolled courses
         for (Course c : enrolledCourses) {
-            // skip courses with no fixed schedule (TBA = to be announced)
-            if (c.getDays().equals("TBA") || newCourse.getDays().equals("TBA")) {
+            // Skip courses with no fixed schedule (TBA = to be announced)
+            if (c.getDays().equalsIgnoreCase("TBA") || newCourse.getDays().equalsIgnoreCase("TBA")) {
                 continue;
             }
             
-            // expand day strings  TTh becomes [T, Th]
+            // Expand abbreviated day strings (e.g., "TTh" becomes ["Tue", "Thu"])
             List<String> days1 = StudentDashboard.expandDays(c.getDays());
             List<String> days2 = StudentDashboard.expandDays(newCourse.getDays());
             
-            // check if courses meet on any common day
+            // Check if courses share any common day
             boolean sameDay = false;
             for (String day : days1) {
                 if (days2.contains(day)) {
@@ -69,39 +70,83 @@ public class CoursePlanner {
                 }
             }
             
-            // continue if no common days
+            // Skip if courses don't meet on the same day
             if (!sameDay) {
                 continue;
             }
             
-            // get time ranges
+            // Parse time ranges 
             String[] time1 = c.getTimes().split("-");
             String[] time2 = newCourse.getTimes().split("-");
             
-            // skip if time format is invalid (TBA or missing range line 7:00 AM - nothing)
+            // Skip if time format is invalid
             if (time1.length < 2 || time2.length < 2) {
                 continue;
             }
             
-            // convert to 24-hour format for comparison
-            int start1 = StudentDashboard.convertTo24Hour(time1[0].trim(), c.getSection());
-            int end1 = StudentDashboard.convertTo24Hour(time1[1].trim(), c.getSection());
-            int start2 = StudentDashboard.convertTo24Hour(time2[0].trim(), newCourse.getSection());
-            int end2 = StudentDashboard.convertTo24Hour(time2[1].trim(), newCourse.getSection());
+            // Extract start and end hours for both courses
+            int startHour1 = parseHour(time1[0].trim());
+            int endHour1 = parseHour(time1[1].trim());
+            int startHour2 = parseHour(time2[0].trim());
+            int endHour2 = parseHour(time2[1].trim());
             
-            // skip if time conversion failed
-            if (start1 < 0 || end1 < 0 || start2 < 0 || end2 < 0) {
+            // Skip if any hour is invalid
+            if (startHour1 == -1 || endHour1 == -1 || startHour2 == -1 || endHour2 == -1) {
                 continue;
             }
             
-            // check overlap: course1 starts before course2 ends AND course1 ends after course2 starts
+            // Convert to 24-hour format for accurate comparison
+            int start1, end1, start2, end2;
+            
+            // Convert first course to 24-hour format
+            if (endHour1 < startHour1) {
+                // Case 1: End hour is smaller (crosses noon)
+                start1 = startHour1;
+                end1 = (endHour1 == 12) ? 12 : endHour1 + 12;
+            } else {
+                if (startHour1 >= 7) {
+                    // Case 2: Morning class (7 AM or later, before noon)
+                    start1 = startHour1;
+                    end1 = endHour1;
+                } else {
+                    // Case 3: Afternoon class (1-6 PM range)
+                    start1 = (startHour1 == 12) ? 12 : startHour1 + 12;
+                    end1 = (endHour1 == 12) ? 12 : endHour1 + 12;
+                }
+            }
+            
+            // Convert second course to 24-hour format using same logic
+            if (endHour2 < startHour2) {
+                start2 = startHour2;
+                end2 = (endHour2 == 12) ? 12 : endHour2 + 12;
+            } else {
+                if (startHour2 >= 7) {
+                    start2 = startHour2;
+                    end2 = endHour2;
+                } else {
+                    start2 = (startHour2 == 12) ? 12 : startHour2 + 12;
+                    end2 = (endHour2 == 12) ? 12 : endHour2 + 12;
+                }
+            }
+            
+            // Check for time overlap using interval intersection formula:
+
             if (start1 < end2 && end1 > start2) {
-                return true; // conflict found
+                return true; // Conflict found
             }
         }
-        return false; // no conflicts
+        return false; // No conflicts found
     }
 
+    // Helper function to get time to int 
+    private int parseHour(String timeStr) {
+        try {
+            String hourPart = timeStr.split(":")[0].trim();
+            return Integer.parseInt(hourPart);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
 
     
     public void setEnrolledCourses(List<Course> courses) {

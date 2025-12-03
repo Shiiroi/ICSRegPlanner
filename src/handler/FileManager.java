@@ -146,43 +146,6 @@ public class FileManager {
         return courses;
     }
     
-    public void saveEnrolledCourses(Student student) {
-        try {
-            List<String> courseCodes = new ArrayList<>();
-
-            for (Course c : student.getEnrolledCourses()) {
-                courseCodes.add(c.getCourseCode());
-            }
-
-            String safeEmail = student.getEmail().replace("@", "_at_").replace(".", "_");
-            Path path = Paths.get("src/database/enrolled_" + safeEmail + ".txt");
-
-            Files.write(path, courseCodes);
-
-            System.out.println("Enrolled courses saved for " + student.getEmail());
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    public ArrayList<Student> loadEnrolledCourses(Path loadPath) {
-        if (!Files.exists(loadPath)) {
-            System.out.println("No existing file found at: " + loadPath);
-            return null;
-        }
-
-        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(loadPath))) {
-            ArrayList<Student> users = (ArrayList<Student>) in.readObject();
-            System.out.println("Loading complete.");
-            return users;
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-    
     // ADDED LOAD FUNCTINOS FOR CALENDAR
     public List<String[]> loadAcademicCalendar() {
         List<String[]> calendarData = new ArrayList<>();
@@ -230,7 +193,4 @@ public class FileManager {
         
         return holidaysData;
     }
-
-
-
 }

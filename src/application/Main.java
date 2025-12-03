@@ -1,8 +1,15 @@
 /**
- * Java GUI application that..
- * @author
- * @created_date
+ * Java GUI application that provides course registration planning for ICS students.
+ * DANGAL allows students to browse course offerings, create schedules, check for conflicts,
+ * and manage multiple schedule plans and compare them for the First Semester of AY 2025-2026.
+ * 
+ * @authors MAGWILI, VINCE ROI SOLANO
+ *          MANUEL, IVAN ERICK GONZALES
+ *          NIÑO, BOBBY FROI SOLIVEN
+ *          OLIVO, RAFAEL SAM GELISANGA
+ * @created_date 2025
  */
+
 
 package application;
 
