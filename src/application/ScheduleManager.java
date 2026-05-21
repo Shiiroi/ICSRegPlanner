@@ -1,16 +1,14 @@
 package application;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.geometry.Insets;
 import model.Student;
-//NEW: class for managing schedules
+
 public class ScheduleManager {
     private Student student;
     private Runnable onScheduleChanged;

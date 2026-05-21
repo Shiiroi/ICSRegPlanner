@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import model.Course;
 import model.Student;
 
@@ -59,7 +58,7 @@ public class FileManager {
         return null;
     }
 
-    // Parses CSV line handling quoted fields with commas using regex. sineach ko lng to guys huhu
+    // Parses CSV line handling quoted fields with commas using regex
     private List<String> parseCSVLine(String line) {
         return Arrays.asList(line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"));
     }

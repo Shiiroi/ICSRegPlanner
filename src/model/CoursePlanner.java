@@ -2,7 +2,6 @@ package model;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import application.StudentDashboard;
 
 public class CoursePlanner {
@@ -48,7 +47,6 @@ public class CoursePlanner {
         return totalUnits;
     } 
 
-    // Check for schedule conflicts 
     public boolean hasConflict(Course newCourse) {
         // Iterate through all enrolled courses
         for (Course c : enrolledCourses) {
@@ -148,7 +146,6 @@ public class CoursePlanner {
         }
     }
 
-    
     public void setEnrolledCourses(List<Course> courses) {
     	this.enrolledCourses.clear();
         this.enrolledCourses.addAll(courses);

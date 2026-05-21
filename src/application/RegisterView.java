@@ -10,9 +10,9 @@ import handler.FileManager;
 import model.Student;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import javafx.scene.text.Font;
 
 public class RegisterView {
-    // ICS Color Palette
     private static final String ICS_BLUE = "#1753A0";
     private static final String ICS_YELLOW = "#F2ED0C";
     private static final String LIGHT_BLUE = "#4B8BDE";
@@ -20,6 +20,7 @@ public class RegisterView {
     private static final String WHITE = "#FFFFFF";
     private static final String DARK_TEXT = "#2C2C2C";
     private static final String LIGHT_TEXT = "#666666";
+    private static final String FONT_FAMILY = "'Inter', 'Segoe UI', sans-serif";
     
     private Stage stage;
     private boolean registrationSuccessful = false;
@@ -34,6 +35,8 @@ public class RegisterView {
         this.stage = new Stage();
         this.stage.initModality(Modality.APPLICATION_MODAL);
         this.stage.setTitle("Register New Account");
+        
+        loadCustomFonts();
         setupUI();
     }
     
@@ -41,7 +44,7 @@ public class RegisterView {
         VBox container = new VBox(20);
         container.setAlignment(Pos.CENTER);
         container.setPadding(new Insets(30));
-        container.setStyle("-fx-background-color: linear-gradient(to bottom, " + CREAM + ", " + WHITE + ");");
+        container.setStyle("-fx-background-color: linear-gradient(to bottom, " + DARK_TEXT + ", " + ICS_BLUE + ");");
         
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
@@ -56,7 +59,7 @@ public class RegisterView {
         
         Label titleLabel = new Label("Create Account");
         titleLabel.setStyle(
-            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+        		"-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 24px;" +
             "-fx-font-weight: 700;" +
             "-fx-text-fill: " + ICS_BLUE + ";"
@@ -65,7 +68,7 @@ public class RegisterView {
         
         Label subtitleLabel = new Label("Fill in your details to register");
         subtitleLabel.setStyle(
-            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+        	"-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 13px;" +
             "-fx-font-weight: 400;" +
             "-fx-text-fill: " + LIGHT_TEXT + ";"
@@ -97,7 +100,7 @@ public class RegisterView {
         programCombo.setPromptText("Select Program");
         programCombo.setPrefWidth(400);
         programCombo.setStyle(
-            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+        	"-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 13px;" +
             "-fx-background-color: " + CREAM + ";" +
             "-fx-background-radius: 8;" +
@@ -108,7 +111,7 @@ public class RegisterView {
         // Add labels and fields with proper row spacing
         int currentRow = 2;
         addFormRow(grid, currentRow, "First Name", firstNameField);
-        currentRow += 2;  // Skip a row between label and next label
+        currentRow += 2;
         
         addFormRow(grid, currentRow, "Middle Name", middleNameField);
         currentRow += 2;
@@ -130,7 +133,7 @@ public class RegisterView {
         
         Label messageLabel = new Label();
         messageLabel.setStyle(
-            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+        	"-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 12px;" +
             "-fx-text-fill: " + ICS_BLUE + ";" +
             "-fx-font-weight: 500;"
@@ -143,14 +146,9 @@ public class RegisterView {
         Button registerButton = new Button("Register");
         styleButton(registerButton, ICS_BLUE, WHITE, true);
         
+        
         Button cancelButton = new Button("Cancel");
-        styleButton(cancelButton, "transparent", ICS_BLUE, false);
-        cancelButton.setStyle(
-            cancelButton.getStyle() +
-            "-fx-border-color: " + ICS_BLUE + ";" +
-            "-fx-border-width: 2px;" +
-            "-fx-border-radius: 8;"
-        );
+        styleButton(cancelButton, ICS_BLUE, WHITE, true);
         
         HBox buttonBox = new HBox(15, registerButton, cancelButton);
         buttonBox.setAlignment(Pos.CENTER);
@@ -161,7 +159,7 @@ public class RegisterView {
                                          passwordField, confirmPasswordField, programCombo);
             if (error != null) {
                 messageLabel.setStyle(
-                    "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+                	"-fx-font-family: " + FONT_FAMILY + ";" +
                     "-fx-font-size: 12px;" +
                     "-fx-text-fill: " + ICS_BLUE + ";" +
                     "-fx-font-weight: 500;"
@@ -193,7 +191,7 @@ public class RegisterView {
     private void addFormRow(GridPane grid, int row, String labelText, Control field) {
         Label label = new Label(labelText);
         label.setStyle(
-            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+        	"-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 12px;" +
             "-fx-font-weight: 600;" +
             "-fx-text-fill: " + DARK_TEXT + ";"
@@ -210,7 +208,7 @@ public class RegisterView {
         field.setPromptText(prompt);
         field.setPrefWidth(400);
         field.setStyle(
-            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+        	"-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 13px;" +
             "-fx-padding: 10px;" +
             "-fx-background-color: " + CREAM + ";" +
@@ -223,7 +221,7 @@ public class RegisterView {
         field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 field.setStyle(
-                    "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+                	"-fx-font-family: " + FONT_FAMILY + ";" +
                     "-fx-font-size: 13px;" +
                     "-fx-padding: 10px;" +
                     "-fx-background-color: " + WHITE + ";" +
@@ -235,7 +233,7 @@ public class RegisterView {
                 );
             } else {
                 field.setStyle(
-                    "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+                	"-fx-font-family: " + FONT_FAMILY + ";" +
                     "-fx-font-size: 13px;" +
                     "-fx-padding: 10px;" +
                     "-fx-background-color: " + CREAM + ";" +
@@ -252,7 +250,7 @@ public class RegisterView {
         button.setPrefWidth(isPrimary ? 400 : 190);
         button.setPrefHeight(42);
         button.setStyle(
-            "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+        	"-fx-font-family: " + FONT_FAMILY + ";" +
             "-fx-font-size: 14px;" +
             "-fx-font-weight: 600;" +
             "-fx-background-color: " + bgColor + ";" +
@@ -264,7 +262,7 @@ public class RegisterView {
         button.setOnMouseEntered(e -> {
             if (isPrimary) {
                 button.setStyle(
-                    "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+                	"-fx-font-family: " + FONT_FAMILY + ";" +
                     "-fx-font-size: 14px;" +
                     "-fx-font-weight: 600;" +
                     "-fx-background-color: " + LIGHT_BLUE + ";" +
@@ -274,7 +272,7 @@ public class RegisterView {
                 );
             } else {
                 button.setStyle(
-                    "-fx-font-family: 'Poppins', 'Segoe UI', sans-serif;" +
+                	"-fx-font-family: " + FONT_FAMILY + ";" +
                     "-fx-font-size: 14px;" +
                     "-fx-font-weight: 600;" +
                     "-fx-background-color: " + CREAM + ";" +
@@ -345,4 +343,17 @@ public class RegisterView {
     public boolean isRegistrationSuccessful() {
         return registrationSuccessful;
     }
+    
+    private void loadCustomFonts() {
+        try {
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-Regular.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-Medium.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-SemiBold.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-Bold.ttf"), 12);
+            System.out.println("Inter fonts loaded successfully in StudentDashboard!");
+        } catch (Exception e) {
+            System.out.println("Could not load Inter fonts: " + e.getMessage());
+            e.printStackTrace();
+        }
+    } 
 }

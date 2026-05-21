@@ -7,10 +7,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import model.Course;
 import model.Student;
-
+import javafx.scene.text.Font;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ScheduleComparisonView {
     private static final String ICS_BLUE = "#1753A0";
@@ -19,8 +18,7 @@ public class ScheduleComparisonView {
     private static final String WHITE = "#FFFFFF";
     private static final String DARK_TEXT = "#2C2C2C";
     private static final String ICS_YELLOW = "#F2ED0C";
-    private static final String LIGHT_TEXT = "#666666";
-    private static final String FONT_FAMILY = "'Poppins', 'Segoe UI', sans-serif";
+    private static final String FONT_FAMILY = "'Inter', 'Segoe UI', sans-serif";
     
     private Student student;
     private Runnable onScheduleChanged;
@@ -36,7 +34,9 @@ public class ScheduleComparisonView {
     public ScheduleComparisonView(Student student, Runnable onScheduleChanged) {
         this.student = student;
         this.onScheduleChanged = onScheduleChanged;
+        loadCustomFonts();
     }
+    
     public VBox createContent() {
         mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
@@ -70,10 +70,10 @@ public class ScheduleComparisonView {
             "-fx-text-fill: " + DARK_TEXT + ";"
         );
 
-        Button saveAsButton = createStyledButton("💾 Save As...", "Save your current active schedule with a new name");
-        Button newScheduleButton = createStyledButton("➕ New", "Start a fresh empty schedule");
-        Button switchButton = createStyledButton("🔄 Switch", "Load a different schedule to work on");
-        Button deleteButton = createStyledButton("🗑️ Delete", "Remove a schedule permanently");
+        Button saveAsButton = createStyledButton("Save As...", "Save your current active schedule with a new name");
+        Button newScheduleButton = createStyledButton("New", "Start a fresh empty schedule");
+        Button switchButton = createStyledButton("Switch", "Load a different schedule to work on");
+        Button deleteButton = createStyledButton("Delete", "Remove a schedule permanently");
 
         ScheduleManager scheduleManager = new ScheduleManager(student, () -> {
             onScheduleChanged.run();
@@ -292,7 +292,7 @@ public class ScheduleComparisonView {
 
         if (rightSchedule != null) {
             rightTitleLabel.setText("");
-            fillCalendar(rightGrid, student.getSchedule(rightSchedule), "#90EE90", DARK_TEXT, "#228B22");
+            fillCalendar(rightGrid, student.getSchedule(rightSchedule), LIGHT_BLUE, WHITE, ICS_BLUE); // CHANGED: Same color as left
         } else {
             rightTitleLabel.setText("");
         }
@@ -301,10 +301,16 @@ public class ScheduleComparisonView {
     private GridPane createCalendarGrid() {
         GridPane grid = new GridPane();
         grid.setGridLinesVisible(true);
-        grid.setHgap(5);
-        grid.setVgap(5);
+        grid.setHgap(0);
+        grid.setVgap(0);
         grid.setPadding(new Insets(10));
-        grid.setStyle("-fx-background-color: " + WHITE + ";");
+        grid.setStyle(
+            "-fx-background-color: " + WHITE + ";" +
+            "-fx-border-color: " + ICS_BLUE + ";" +
+            "-fx-border-width: 2px;" +
+            "-fx-border-radius: 8;" +
+            "-fx-grid-lines-visible: true;"
+        );
 
         String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
         for (int i = 0; i < days.length; i++) {
@@ -314,12 +320,26 @@ public class ScheduleComparisonView {
                 "-fx-font-weight: 700;" +
                 "-fx-font-size: 14px;" +
                 "-fx-text-fill: " + ICS_BLUE + ";" +
-                "-fx-alignment: center;"
+                "-fx-alignment: center;" +
+                "-fx-background-color: " + CREAM + ";" +
+                "-fx-border-color: " + ICS_BLUE + ";" +
+                "-fx-border-width: 0 1 1 0;" +
+                "-fx-padding: 10;"
             );
             dayLabel.setMinWidth(100);
             dayLabel.setAlignment(Pos.CENTER);
             grid.add(dayLabel, i + 1, 0);
         }
+        
+        // Empty top-left corner
+        Label cornerLabel = new Label("");
+        cornerLabel.setStyle(
+            "-fx-background-color: " + CREAM + ";" +
+            "-fx-border-color: " + ICS_BLUE + ";" +
+            "-fx-border-width: 0 1 1 0;"
+        );
+        cornerLabel.setMinSize(80, 40);
+        grid.add(cornerLabel, 0, 0);
 
         for (int i = 0; i < 13; i++) {
             int hour = 7 + i;
@@ -327,21 +347,41 @@ public class ScheduleComparisonView {
             timeLabel.setStyle(
                 "-fx-font-family: " + FONT_FAMILY + ";" +
                 "-fx-font-size: 12px;" +
-                "-fx-text-fill: " + DARK_TEXT + ";"
+                "-fx-font-weight: 600;" +
+                "-fx-text-fill: " + DARK_TEXT + ";" +
+                "-fx-background-color: " + CREAM + ";" +
+                "-fx-border-color: " + ICS_BLUE + ";" +
+                "-fx-border-width: 0 1 1 0;" +
+                "-fx-padding: 5;"
             );
             timeLabel.setMinHeight(50);
-            timeLabel.setAlignment(Pos.CENTER_LEFT);
+            timeLabel.setMinWidth(80);
+            timeLabel.setAlignment(Pos.CENTER);
             grid.add(timeLabel, 0, i + 1);
+            
+            // Add empty cells with borders
+            for (int j = 0; j < 6; j++) {
+                StackPane emptyCell = new StackPane();
+                emptyCell.setStyle(
+                    "-fx-background-color: " + WHITE + ";" +
+                    "-fx-border-color: " + CREAM + ";" +
+                    "-fx-border-width: 0 1 1 0;"
+                );
+                emptyCell.setMinSize(100, 50);
+                grid.add(emptyCell, j + 1, i + 1);
+            }
         }
 
         return grid;
     }
 
     private void clearGrid(GridPane grid) {
+        // Remove only course blocks, keep headers and empty cells
         grid.getChildren().removeIf(node -> {
-            Integer r = GridPane.getRowIndex(node);
-            Integer c = GridPane.getColumnIndex(node);
-            return !((r != null && r == 0) || (c != null && c == 0));
+            if (node instanceof Label && ((Label) node).getText().contains("\n")) {
+                return true;
+            }
+            return false;
         });
     }
 
@@ -459,5 +499,18 @@ public class ScheduleComparisonView {
 
     public void onScheduleChanged(String newActiveName) {
         refreshView();
+    }
+    
+    private void loadCustomFonts() {
+        try {
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-Regular.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-Medium.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-SemiBold.ttf"), 12);
+            Font.loadFont(getClass().getResourceAsStream("/fonts/Inter_18pt-Bold.ttf"), 12);
+            System.out.println("Inter fonts loaded successfully in StudentDashboard!");
+        } catch (Exception e) {
+            System.out.println("Could not load Inter fonts: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

@@ -10,7 +10,6 @@
  * @created_date 2025
  */
 
-
 package application;
 
 import javafx.application.Application;

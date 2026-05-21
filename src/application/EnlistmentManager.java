@@ -2,7 +2,6 @@ package application;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
@@ -19,18 +18,19 @@ public class EnlistmentManager {
     private TableView<Course> offeringsTable; 
     private ObservableList<Course> enrolledCourses;
     private StudentDashboard dashboard;
-    private List<Course> enrolledList; // Direct reference to student's active schedule
+    private List<Course> enrolledList;
     
     // Keep direct reference to the student's list
     public EnlistmentManager(List<Course> enrolledList, TableView<Course> offeringsTable, StudentDashboard dashboard) {
-        this.enrolledList = enrolledList; // This is the ACTUAL student schedule
+        this.enrolledList = enrolledList;
         this.offeringsTable = offeringsTable;
         this.dashboard = dashboard;
         this.planner = new CoursePlanner();
         this.planner.setEnrolledCourses(enrolledList); 
-        this.enrolledCourses = FXCollections.observableArrayList(enrolledList); // ✅ Use the actual list
+        this.enrolledCourses = FXCollections.observableArrayList(enrolledList);
     }
     
+    // Create UI for Enlistment Panel
     public VBox createEnlistmentPane() { 
         VBox content = new VBox(10);
         content.setPadding(new Insets(20));
@@ -104,7 +104,7 @@ public class EnlistmentManager {
                         existingSection = c.getSection();
                     } else if (StudentDashboard.isLab(c.getSection())) {
                         hasLab = true;
-                        existingSection = c.getSection().split("-")[0]; // gets the section
+                        existingSection = c.getSection().split("-")[0];
                     }
                 }
             }
@@ -169,16 +169,14 @@ public class EnlistmentManager {
         }
     }
 
-
+    // Removes selected course on the calendar and enrolled table
     private void removeSelectedCourse() {
         Course selected = enrolledTable.getSelectionModel().getSelectedItem();
         
         if (selected != null) {
-            // ✅ REMOVE FROM THE ACTUAL STUDENT'S LIST
             enrolledList.remove(selected);
             planner.setEnrolledCourses(enrolledList);
-            
-            // ✅ SAVE BACK TO STUDENT'S SCHEDULE MAP
+
             dashboard.getCurrentStudent().setSchedule(
                 dashboard.getCurrentStudent().getActiveScheduleName(), 
                 new ArrayList<>(enrolledList)
@@ -186,14 +184,15 @@ public class EnlistmentManager {
             
             refreshEnrolledTable();
             dashboard.refreshCalendar();
-            dashboard.notifyScheduleChanged(); // ✅ Notify comparison view
+            dashboard.notifyScheduleChanged();
         }
     }
 
     private void refreshEnrolledTable() {
-        enrolledCourses.setAll(enrolledList); // Use the actual list
+        enrolledCourses.setAll(enrolledList);
     }
     
+    // Refreshes the list of enrolled courses
     public void updateEnrolledList(List<Course> newEnrolledList) {
         this.enrolledList = newEnrolledList;
         this.planner.setEnrolledCourses(newEnrolledList);
